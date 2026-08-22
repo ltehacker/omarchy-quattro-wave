@@ -1,0 +1,61 @@
+#!/bin/bash
+# Launch cava with a tiny ASCII config suitable for an Omarchy bar widget.
+# stdout is one line per frame: 0;12;40;...; (ascii_max_range = 100)
+
+set -euo pipefail
+
+bars="${1:-16}"
+fps="${2:-30}"
+range=100
+runtime="${XDG_RUNTIME_DIR:-/tmp}"
+config="$runtime/itdir.cava.ini"
+lock="$runtime/itdir.cava.lock"
+
+if ! command -v cava >/dev/null 2>&1; then
+  echo "itdir.cava: cava is not installed" >&2
+  exit 127
+fi
+
+exec 9>"$lock"
+if ! flock -n 9; then
+  echo "itdir.cava: already running" >&2
+  exit 0
+fi
+
+if ! [[ $bars =~ ^[0-9]+$ ]] || ((bars < 4 || bars > 64)); then
+  bars=16
+fi
+if ! [[ $fps =~ ^[0-9]+$ ]] || ((fps < 10 || fps > 60)); then
+  fps=30
+fi
+
+cat >"$config" <<EOF
+[general]
+framerate = $fps
+bars = $bars
+autosens = 1
+
+[input]
+method = pipewire
+source = auto
+
+[output]
+method = raw
+raw_target = /dev/stdout
+data_format = ascii
+ascii_max_range = $range
+channels = mono
+
+[smoothing]
+monstercat = 0
+noise_reduction = 55
+EOF
+
+# Stay in this shell so the flock fd stays held for the cava child's life,
+# and so we can log unexpected exits instead of exec replacing us.
+if command -v stdbuf >/dev/null 2>&1; then
+  stdbuf -oL cava -p "$config"
+else
+  cava -p "$config"
+fi
+exit $?

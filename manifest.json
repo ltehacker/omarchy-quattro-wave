@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "itdir.cava",
+  "name": "QuattroWave",
+  "version": "1.1.0",
+  "author": "Grok (xAI)",
+  "license": "MIT",
+  "description": "Cava audio visualizer for the Omarchy bar. One process, every monitor, live theme colors.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "QuattroWave",
+    "description": "Cava audio visualizer",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "left",
+    "defaults": {
+      "bars": 16,
+      "color": "accent"
+    }
+  }
+}

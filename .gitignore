@@ -1,0 +1,3 @@
+*.qmlc
+.qmlcache/
+.DS_Store
