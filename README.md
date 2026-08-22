@@ -1,8 +1,10 @@
 # QuattroWave
 
+![Bounce](ySEJm.gif)
+
 Built with Grok · Cava visualizer integration for Omarchy Quattro quickshell
 
-![QuattroWave on the Omarchy bar](preview.gif)
+![Bounce](Ye3eu.gif)
 
 One cava process feeds every monitor. Bars are real rectangles, not Unicode blocks. Theme swaps recolor them live from Omarchy's `Color` singleton (`accent`, `muted`, bar foreground).
 
