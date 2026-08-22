@@ -17,7 +17,7 @@ One cava process feeds every monitor. Bars are real rectangles, not Unicode bloc
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/ltehacker/QuattroWave.git --enable
+omarchy plugin add https://github.com/ltehacker/omarchy-quattro-wave --enable
 ```
 
 Then place it, if it did not land where you want:
