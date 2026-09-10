@@ -7,7 +7,11 @@ BarWidget {
   id: root
   moduleName: "itdir.cava"
 
+  // Injected by the host bar. On Omarchy 4.0.3+ this is a scoped facade; a
+  // first-party bar's facade can resolve services, a replacement bar's cannot.
+  property var shell: null
   property var cavaService: null
+  property var localService: null
 
   readonly property int barCount: Model.parseIntSetting(setting("bars", 16), 16, 4, 64)
   readonly property string colorMode: Model.parseColorMode(setting("color", "accent"))
@@ -21,8 +25,31 @@ BarWidget {
   readonly property color mutedColor: Color.muted
   readonly property color foregroundColor: bar ? bar.barForeground : Color.foreground
 
+  // Omarchy 4.0.3 scopes third-party plugins to their own services, and gives a
+  // replacement bar a deliberately service-less entry facade so it cannot reach
+  // another plugin's live service object. A widget hosted in such a bar must
+  // therefore run its own cava process. Prefer the shared service where it is
+  // reachable (first-party bars, and Omarchy before 4.0.3); fall back to a
+  // local instance otherwise. `allowMultiple` is false, so this stays one
+  // process per bar instance.
+  function ensureLocalService() {
+    if (localService) return localService
+    var comp = Qt.createComponent(Qt.resolvedUrl("Service.qml"))
+    if (comp.status === Component.Ready) {
+      localService = comp.createObject(root)
+    } else if (comp.status === Component.Error) {
+      console.warn("itdir.cava: local service failed to load:", comp.errorString())
+    }
+    return localService
+  }
+
   function resolveService() {
-    var next = bar && bar.shell ? bar.shell.serviceFor("itdir.cava") : null
+    var next = null
+    if (shell && typeof shell.serviceFor === "function")
+      next = shell.serviceFor("itdir.cava")
+    if (!next && bar && bar.shell && typeof bar.shell.serviceFor === "function")
+      next = bar.shell.serviceFor("itdir.cava")
+    if (!next) next = ensureLocalService()
     if (next === cavaService) return
     cavaService = next
     if (cavaService) cavaService.applySettings(settings)
