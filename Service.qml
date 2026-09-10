@@ -17,6 +17,7 @@ Item {
   property bool alive: false
   property string lastError: ""
   property bool starting: false
+  property bool haveSettings: false
 
   readonly property string helperPath: {
     var url = String(Qt.resolvedUrl("cava-run"))
@@ -31,7 +32,15 @@ Item {
     return next
   }
 
+  // Widget instances are constructed with an empty settings object and have the
+  // real one assigned a moment later. A mirrored bar creates one instance per
+  // screen, so an empty push can land after a populated one and reset the bar
+  // count to the default. Once real settings have been seen, ignore empty ones.
   function applySettings(settings) {
+    var hasKeys = false
+    if (settings) for (var k in settings) { hasKeys = true; break }
+    if (!hasKeys && haveSettings) return
+    if (hasKeys) haveSettings = true
     var nextBars = Model.parseIntSetting(settings && settings.bars, 16, 4, 64)
     var nextFps = Model.parseIntSetting(settings && settings.framerate, 30, 10, 60)
     var same = nextBars === barCount && nextFps === framerate
@@ -43,7 +52,9 @@ Item {
   }
 
   function restart() {
-    if (starting) return
+    // A restart already in flight must not swallow this one: re-arm the
+    // debounce so the newest bar count is what actually gets launched.
+    if (starting) { startDebounce.restart(); return }
     available = true
     lastError = ""
     startDebounce.stop()

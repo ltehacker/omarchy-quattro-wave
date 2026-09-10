@@ -43,16 +43,28 @@ BarWidget {
     return localService
   }
 
+  // Give the host a real chance to hand us the shared service before
+  // self-hosting. The host injects `shell` after construction, so an immediate
+  // fallback would spawn a second, redundant service: both launch cava-run,
+  // the helper's flock lets only one survive, and whichever wins may be the one
+  // that never received the widget's settings.
+  property int resolveAttempts: 0
+  readonly property int resolveGraceTicks: 8   // ~2s at the 250ms retry Timer
+
   function resolveService() {
     var next = null
     if (shell && typeof shell.serviceFor === "function")
       next = shell.serviceFor("itdir.cava")
     if (!next && bar && bar.shell && typeof bar.shell.serviceFor === "function")
       next = bar.shell.serviceFor("itdir.cava")
-    if (!next) next = ensureLocalService()
-    if (next === cavaService) return
+    if (!next) {
+      resolveAttempts += 1
+      if (resolveAttempts < resolveGraceTicks) return
+      next = ensureLocalService()
+    }
+    if (!next || next === cavaService) return
     cavaService = next
-    if (cavaService) cavaService.applySettings(settings)
+    cavaService.applySettings(settings)
   }
 
   function pushSettings() {
